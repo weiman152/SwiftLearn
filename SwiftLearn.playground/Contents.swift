@@ -177,9 +177,70 @@ func greet(_ person: String, on day: String) -> String {
 
 print("\(greet("美美", on: "周三"))")
 
+//元组
+func calculateStatistics(scores: [Int]) -> (min: Int, max: Int, sum: Int) {
+    var min = scores[0]
+    var max = scores[0]
+    var sum = 0
+    
+    for score in scores {
+        if score > max {
+            max = score
+        }
+        if score < min {
+            min =  score
+        }
+        sum += score
+    }
+    
+    return (min,max,sum)
+}
 
+let statistics = calculateStatistics(scores: [5,3,6,21,32,55,33])
+print(statistics)
+print(statistics.sum)
+print(statistics.2)
 
+// 函数参数不固定 的使用方式  (厉害了)
+func sumOf(numbers: Int...) -> Int {
+    var sum = 0
+    for number in numbers {
+        sum += number
+    }
+    return sum
+}
 
+sumOf(numbers: 1)
+sumOf(numbers: 1,2,3)
+sumOf(numbers: 3,4,5,6,7,8)
+
+func 平均值(参数们: Int...) -> Double {
+    var avg = 0.0
+    var sum = 0
+    for n in 参数们 {
+        sum += n
+    }
+    avg = Double(sum/参数们.count)
+    return avg
+}
+
+平均值(参数们: 2,3,4,5,6)
+平均值(参数们: 2,4)
+
+//函数嵌套
+func returnFifteen() -> Int {
+    var y = 10
+    func add(){
+        y += 5
+    }
+    add()
+    return y
+}
+
+returnFifteen()
+
+//函数的返回值为一个函数
+//func make
 
 
 
