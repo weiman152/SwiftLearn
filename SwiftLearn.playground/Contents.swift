@@ -240,7 +240,229 @@ func returnFifteen() -> Int {
 returnFifteen()
 
 //函数的返回值为一个函数
-//func make
+func makeIncrementer() -> ((Int) -> Int) {
+    func addOne(number: Int) -> Int {
+        return 1 + number
+    }
+    return addOne
+}
+
+var increment = makeIncrementer()
+increment(7)
+
+//函数作为参数传入另一个函数
+func hasAnyMatches(list: [Int], condition: (Int) -> Bool) -> Bool {
+    for item in list {
+        if condition(item) {
+            return true
+        }
+    }
+    return false
+}
+
+func lessThanTen(number: Int) -> Bool {
+    return number < 10
+}
+
+var numbers2 = [20,19,7,12]
+
+hasAnyMatches(list: numbers2, condition: lessThanTen)
+
+/*
+ 函数实际上是一种特殊的闭包:它是一段能之后被调取的代码。闭包中的代码能访问闭包作用域中的变量和函数，即使闭包是在一个不同的作用域被执行的 - 你已经在嵌套函数的例子中看过了。你可以使用 {} 来创建一个匿名闭包。使用 in 将参数和返回值类型的声明与闭包函数体进行分离。
+ */
+
+//数组每个元素的三倍组成的数组
+let num3 = numbers2.map { (number: Int) -> Int in
+    let result = 3 * number
+    return result
+}
+
+print(num3)
+
+let num4 = numbers2.map { (number: Int) -> Int in
+    if number % 2 != 0 {
+        return 0
+    } else {
+        return number
+    }
+}
+
+print(num4)
+
+/*
+ 创建简单闭包的方法
+ 如果一个闭包的类型已知，可以忽略参数，返回值，甚至两个都忽略
+ */
+
+let mapNumber = numbers2.map({ number in  3 * number })
+print(mapNumber)
+
+/*
+ 通过参数位置而不是名字来引用参数 —— 这个方法在非常短的方法中非常好用。比如在懒加载的时候。
+ */
+//从大到小排序
+let sortNumbers = numbers2.sorted{ $0 > $1 }
+print(sortNumbers)
+
+//-----------------------对象和类--------------------------
+
+//创建类 ：使用关键字 class
+class Shape {
+    var numberOfSides = 0
+    let color = "红色"
+    func desc() -> String {
+        return "一个具有 \(numberOfSides)个边的图形"
+    }
+    
+    func setSides(number: Int) {
+        self.numberOfSides = number
+    }
+}
+
+//创建类的实例
+var shape = Shape()
+shape.setSides(number: 7)
+print(shape.desc())
+
+/*
+ 这个版本的 Shape 类缺少了一些重要的东西：一个构造函数来初始化类实例。使用 init 来创建一个构造器
+ */
+
+class NamedShape {
+    var numberOfSides: Int = 0
+    var name: String
+    
+    init(name: String) {
+        self.name = name
+    }
+    
+    func desc() -> String {
+        return "这是一个具有\(numberOfSides)边的图形"
+    }
+    //删除对象之前进行一些清理工作，使用 deinit 创建一个析构函数。
+    deinit {
+        
+    }
+}
+
+/*创建子类： 在类名的后面加上父类的名字，使用冒号分割。 而且创建类的时候并不需要一个标准的根类，
+ 这与OC的所有类都继承自NSObject根类有一点区别。
+*/
+
+class Square: NamedShape {
+    var sideLength: Double
+    
+    init(sideLength: Double, name: String) {
+        self.sideLength = sideLength
+        super.init(name: name)
+        numberOfSides = 4
+    }
+}
+
+/*
+ 重写父类的方法： override
+ 如果没有添加 override 就重写父类方法的话编译器会报错。
+ 编译器同样会检测 override 标记的方法是否确实在父类中。
+ */
+
+class SquareMy: Square {
+    
+    func area() -> Double {
+        return sideLength * sideLength
+    }
+    
+    override func desc() -> String {
+        return "这是一个正方形，边长是 \(sideLength)"
+    }
+}
+
+let test = SquareMy.init(sideLength: 5.2, name: "test")
+print("正方形的面积是 \(test.area())")
+print(test.desc())
+
+/*
+ getter 和 setter 方法
+ 除了存储简单的属性之外，属性可以有 getter 和 setter 方法
+ */
+
+class Sanjiaoxing: NamedShape {
+    var sideLength: Double = 0.0
+    
+    /*
+     注意 sanjiaoxing 类的构造器执行了三步：
+     
+     设置子类声明的属性值
+     调用父类的构造器
+     改变父类定义的属性值。其他的工作比如调用方法、getters 和 setters 也可以在这个阶段完成。
+     */
+    init(sideLength: Double, name: String) {
+        self.sideLength = sideLength
+        super.init(name: name)
+        numberOfSides = 3
+    }
+    
+    var perimeter: Double {
+        get {
+           return 3.0 * sideLength
+        }
+        set {
+            sideLength = newValue / 3.0
+        }
+    }
+    
+    override func desc() -> String {
+        return "这是一个等边三角形，三角形的边长是 \(sideLength)"
+    }
+}
+
+var triangle = Sanjiaoxing.init(sideLength: 3.1, name: "三角形")
+print(triangle.perimeter)
+triangle.perimeter = 9.9
+print(triangle.sideLength)
+print(triangle.desc())
+
+/*
+ willset 和didset
+ 如果不需要计算属性，但是仍然需要在设置一个新值之前或者之后运行代码，使用willSet和didSet.
+ 写入的代码会在属性值发生改变时调用，但不包含构造器中发生值改变的情况。
+ */
+
+//正方形和三角形的边长相同
+class TriangleAndSquare {
+    var sanjiao: Sanjiaoxing {
+        willSet {
+            square.sideLength = newValue.sideLength
+        }
+    }
+    
+    var square: SquareMy {
+        willSet {
+            sanjiao.sideLength = newValue.sideLength
+        }
+    }
+    
+    init(size: Double, name: String) {
+        square = SquareMy.init(sideLength: size, name: name)
+        sanjiao = Sanjiaoxing.init(sideLength: size, name: name)
+    }
+}
+
+var triangleAndSquare = TriangleAndSquare.init(size: 10, name: "三角形和正方形相同的边长的图形")
+print(triangleAndSquare.square.sideLength)
+print(triangleAndSquare.sanjiao.sideLength)
+triangleAndSquare.square = SquareMy.init(sideLength: 50, name: "大的正方形")
+print(triangleAndSquare.sanjiao.sideLength)
+
+
+
+
+
+
+
+
+
+
 
 
 
