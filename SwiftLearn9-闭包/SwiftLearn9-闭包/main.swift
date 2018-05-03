@@ -10,7 +10,7 @@ import Foundation
 
 print("Hello, World!")
 
-/**
+/** 一、
  闭包是自包含的代码块，可以在代码中被传递和使用。
  swift的闭包与C和OC的Block以及其他一些语言的匿名函数比较相似。
  */
@@ -83,7 +83,7 @@ do {
 }
 
 
-// 尾随闭包
+// 二、尾随闭包
 // 如果你需要将一个很长的闭包表达式作为最后一个参数传递给函数，可以使用尾随闭包来增强函数的可读性。
 // 尾随闭包，顾名思义就是闭包作为函数的最后一个参数。
 do {
@@ -125,7 +125,145 @@ do {
     print("---- \(strings)")
 }
 
+/*
+ 三、值捕获
+ 闭包可以在其被定义的上下文中捕获常量或者变量。即使定义这些常量和变量的原作用域已经不存在，闭包仍然可以在闭包函数体内引用和修改这些值。
+ 
+ Swift 中，可以捕获值的闭包的最简单形式是嵌套函数，也就是定义在其他函数的函数体内的函数。嵌套函数可以捕获其外部函数所有的参数以及定义的常量和变量。
+ 
+ 举个例子，这有一个叫做 makeIncrementer 的函数，其包含了一个叫做 incrementer 的嵌套函数。嵌套函数  incrementer() 从上下文中捕获了两个值，runningTotal 和 amount。捕获这些值之后，makeIncrementer 将 incrementer 作为闭包返回。每次调用 incrementer 时，其会以 amount 作为增量增加 runningTotal 的值。
+ */
 
+func makeIncrementer(forIncrement amount: Int) -> ()->Int{
+    var runningTotal = 0
+    func incrementer() -> Int {
+        runningTotal += amount
+        return runningTotal
+    }
+    return incrementer
+}
+
+let incrementByTen = makeIncrementer(forIncrement: 10)
+print("-----1-----  \(incrementByTen())")
+print("-----2-----  \(incrementByTen())")
+print("-----3-----  \(incrementByTen())")
+print("-----4-----  \(incrementByTen())")
+/*
+ 结果是：
+ -----1-----  10
+ -----2-----  20
+ -----3-----  30
+ -----4-----  40
+ */
+
+/*
+ 解释：
+ 捕获引用保证了 runningTotal 和 amount 变量在调用完 makeIncrementer 后不会消失，并且保证了在下一次执行 incrementer 函数时，runningTotal 依旧存在。
+ 
+ 注意 为了优化，如果一个值不会被闭包改变，或者在闭包创建后不会改变，Swift 可能会改为捕获并保存一份对值的拷贝。 Swift 也会负责被捕获变量的所有内存管理工作，包括释放不再需要的变量。
+ */
+
+/*
+ 如果你创建了另一个 incrementer，它会有属于自己的引用，指向一个全新、独立的 runningTotal 变量：
+ */
+
+let incrementBySeven = makeIncrementer(forIncrement: 7)
+print("--aa--- \(incrementBySeven())")
+
+/*
+ 注意：
+ 如果你将闭包赋值给一个类实例的属性，并且该闭包通过访问该实例或其成员而捕获了该实例，你将在闭包和该实例间创建一个循环强引用。Swift 使用捕获列表来打破这种循环强引用
+ */
+
+/*
+ 四、闭包是引用类型
+ 上面的例子中，incrementBySeven 和 incrementByTen 都是常量，但是这些常量指向的闭包仍然可以增加其捕获的变量的值。这是因为函数和闭包都是引用类型。
+ 这也意味着如果你将闭包赋值给了两个不同的常量或变量，两个值都会指向同一个闭包。
+ */
+
+let alsoIncrementByTen = incrementByTen
+print("--bb-- \(alsoIncrementByTen())")
+
+/*
+ 打印结果：
+ --bb-- 50
+ */
+
+/*
+ 五、逃逸闭包
+ 当一个闭包作为参数传到一个函数中，但是这个闭包在函数返回之后才被执行，我们称该闭包从函数中逃逸。
+ 当你定义接受闭包作为参数的函数时，你可以在参数名之前标注 @escaping，用来指明这个闭包是允许“逃逸”出这个函数的。
+ */
+
+// 一个数组，数组的元素是无参数，无返回值的函数
+var completionHandlers: [() -> Void] = []
+
+func someFunctionWithEscapingClosure(completionHandler: @escaping () -> Void) {
+    completionHandlers.append(completionHandler)
+}
+
+//将一个闭包标记为 @escaping 意味着你必须在闭包中显式地引用 self。
+func someFunctionWithNonescapingClosure(closure: () -> Void) {
+    closure()
+}
+
+class SomeClass {
+    var x = 10
+    func doSomething() {
+        someFunctionWithEscapingClosure { self.x = 100 }
+        someFunctionWithNonescapingClosure { x = 200 }
+    }
+}
+
+let instance = SomeClass()
+instance.doSomething()
+print(instance.x)
+// 打印出 "200"
+
+completionHandlers.first?()
+print(instance.x)
+// 打印出 "100"
+
+/*
+ 六、自动闭包
+ 自动闭包是一种自动创建的闭包，用于包装传递给函数作为参数的表达式。
+ 这种闭包不接受任何参数，当它被调用的时候，会返回被包装在其中的表达式的值。这种便利语法让你能够省略闭包的花括号，用一个普通的表达式来代替显式的闭包。
+ */
+
+do {
+    var customersInLine = ["Chris", "Alex", "Ewa", "Barry", "Daniella"]
+    print(customersInLine.count)
+    
+    let customerProvider = { customersInLine.remove(at : 0) }
+    print("customersInLine: \(customersInLine.count)")
+    print("customerProvider = \(customerProvider())")
+    print("customersInLine: \(customersInLine.count)")
+    
+    /*
+     打印结果：
+     5
+     customersInLine: 5
+     customerProvider = Chris
+     customersInLine: 4
+     
+     由此可以看出，在调用customerProvider之前，花括号中的语句体都没有执行，直到customerProvider调用才执行。
+     */
+    
+    //将闭包作为参数传递给函数时，你能获得同样的延时求值行为。
+    
+    func serve(customer customerProvider: () -> String) {
+        print("Now serving \(customerProvider())!")
+    }
+    serve(customer: { customersInLine.remove(at: 0) } )
+    // 输出：Now serving Alex!
+    
+    /*
+     注意
+     过度使用 autoclosures 会让你的代码变得难以理解。上下文和函数名应该能够清晰地表明求值是被延迟执行的。
+     */
+}
+
+// 个人认为，代码的书写应该尽量的逻辑清晰，易读，过多的使用闭包或许会让代码过于晦涩难懂。
 
 
 
